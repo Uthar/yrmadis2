@@ -8,6 +8,7 @@
    #:create-window
    #:destroy-window
    #:gl-create-context
+   #:gl-delete-context
    #:gl-swap-window))
 
 (in-package sdl2/video)
@@ -56,6 +57,9 @@
 
 (c:defcfun ("SDL_GL_CreateContext" gl-create-context) :pointer
   (window :pointer))
+
+(c:defcfun ("SDL_GL_DeleteContext" gl-delete-context) :void
+  (context :pointer))
 
 (c:defcfun ("SDL_GL_SwapWindow" gl-swap-window) :void
   (window :pointer))

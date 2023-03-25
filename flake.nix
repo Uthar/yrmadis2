@@ -13,6 +13,7 @@
       sbcl' = sbcl.withPackages (ps: with ps; [
         alexandria
         cffi
+        cl-opengl
       ]);
     in {
       devShells.x86_64-linux.default = pkgs.mkShell {
