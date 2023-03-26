@@ -14,6 +14,8 @@
         alexandria
         cffi
         cl-opengl
+        _3d-quaternions
+        pngload
       ]);
     in {
       devShells.x86_64-linux.default = pkgs.mkShell {
