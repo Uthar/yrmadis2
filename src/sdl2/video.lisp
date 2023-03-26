@@ -10,7 +10,9 @@
    #:gl-create-context
    #:gl-delete-context
    #:gl-swap-window
-   #:gl-make-current))
+   #:gl-make-current
+   #:gl-reset-attributes
+   #:gl-set-attribute))
 
 (in-package sdl2/video)
 
@@ -38,7 +40,37 @@
   (:keyboard-grabbed  #x00100000)
   (:vulkan  #x10000000)
   (:metal   #x20000000)
-)
+  )
+
+(c:defcenum gl-attr
+  :red-size
+  :green-size
+  :blue-size
+  :alpha-size
+  :buffer-size
+  :doublebuffer
+  :depth-size
+  :stencil-size
+  :accum-red-size
+  :accum-green-size
+  :accum-blue-size
+  :accum-alpha-size
+  :stereo
+  :multisamplebuffers
+  :multisamplesamples
+  :accelerated-visual
+  :retained-backing
+  :context-major-version
+  :context-minor-version
+  :context-egl
+  :context-flags
+  :context-profile-mask
+  :share-with-current-context
+  :framebuffer-srgb-capable
+  :context-release-behavior
+  :context-reset-notification
+  :context-no-error
+  :floatbuffers)
     
 (c:defcfun ("SDL_GetNumVideoDisplays" get-num-video-displays) :int)
 
@@ -55,6 +87,12 @@
 
 (c:defcfun ("SDL_DestroyWindow" destroy-window) :void
   (window :pointer))
+
+(c:defcfun ("SDL_GL_ResetAttributes" gl-reset-attributes) :void)
+
+(c:defcfun ("SDL_GL_SetAttribute" gl-set-attribute) :int
+  (attr gl-attr)
+  (value :int))
 
 (c:defcfun ("SDL_GL_CreateContext" gl-create-context) :pointer
   (window :pointer))
