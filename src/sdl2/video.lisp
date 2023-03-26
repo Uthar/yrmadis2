@@ -9,7 +9,8 @@
    #:destroy-window
    #:gl-create-context
    #:gl-delete-context
-   #:gl-swap-window))
+   #:gl-swap-window
+   #:gl-make-current))
 
 (in-package sdl2/video)
 
@@ -63,3 +64,7 @@
 
 (c:defcfun ("SDL_GL_SwapWindow" gl-swap-window) :void
   (window :pointer))
+
+(c:defcfun ("SDL_GL_MakeCurrent" gl-make-current) :int
+  (window :pointer)
+  (context :pointer))
