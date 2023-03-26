@@ -23,10 +23,15 @@
 
 (defun init ()
   (sdl2:init '(:everything))
+  ;; anti-aliasing
+  (sdl2:gl-set-attribute :multisamplebuffers 1)
+  (sdl2:gl-set-attribute :multisamplesamples 4)
+  (sdl2:gl-set-attribute :accelerated-visual 1)
   (setf *window* (sdl2:create-window "Yrmadis" 0 0 *width* *height* '(:opengl)))
   (setf *gl* (sdl2:gl-create-context *window*))
   (sdl2:gl-make-current *window* *gl*)
   (gl:enable :depth-test)
+  (gl:enable :multisample)
   (setf *camera* (camera:camera 0 0 3))
   (setf *sphere* (sphere:load-sphere (sphere:make-sphere 5)))
   (setf *shader* (make-instance 'shaders:opengl-shader
@@ -47,6 +52,7 @@
   (gl:delete-buffers (list *sphere*))
   (gl:delete-program (slot-value *shader* 'shaders::program))
   (sdl2:gl-delete-context *gl*)
+  (sdl2:gl-reset-attributes)
   (sdl2:destroy-window *window*)
   (values))
 
