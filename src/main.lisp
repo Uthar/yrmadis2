@@ -141,6 +141,9 @@
     (format t "~A~%" *pressed-down*)
     (values)))
 
+(defmethod handle-event ((event-type (eql :quit)) event)
+  (invoke-restart 'quit))
+
 (defun handle-input ()
   (let ((event (sdl2:make-event)))
     (while (plusp (sdl2:poll-event event))
