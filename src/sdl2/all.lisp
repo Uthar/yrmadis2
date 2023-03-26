@@ -8,7 +8,8 @@
    :sdl2/messagebox
    :sdl2/scancode
    :sdl2/sdl
-   :sdl2/video))
+   :sdl2/video
+   :sdl2/timer))
   
   
   
