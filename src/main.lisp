@@ -56,7 +56,17 @@
   (sdl2:destroy-window *window*)
   (values))
 
+(defparameter *walk-speed* 0.1)
+
 (defun render ()
+  (when (find :up *pressed-down*)
+    (camera:walk *camera* :z (- *walk-speed*)))
+  (when (find :down *pressed-down*)
+    (camera:walk *camera* :z (+ *walk-speed*)))
+  (when (find :left *pressed-down*)
+    (camera:walk *camera* :x (+ *walk-speed*)))
+  (when (find :right *pressed-down*)
+    (camera:walk *camera* :x (- *walk-speed*)))
   (gl:viewport 0 0 *width* *height*)
   (gl:clear-color 0.1 0.1 0.1 1.0)
   (gl:clear :color-buffer-bit :depth-buffer-bit)
@@ -93,12 +103,58 @@
   (sdl2:gl-swap-window *window*)
   (values))
 
+(defmacro while (test &body body)
+  `(do () ((not ,test)) ,@body))
+
+(defgeneric handle-event (event-type event))
+
+(defmethod handle-event ((event-type t) event)
+  (format t "Ignoring event of type ~A~%" event-type)
+  (values))
+
+(defvar *pressed-down* nil
+  "Buttons currently pressed down")
+
+(defmethod handle-event ((event-type (eql :keyup)) event)
+  (let* ((keysym (cffi:foreign-slot-pointer
+                  event
+                  '(:struct sdl2:keyboard-event)
+                  'sdl2:keysym))
+         (keycode (cffi:foreign-slot-value
+                   keysym
+                   '(:struct sdl2:keysym)
+                   'sdl2/keyboard::keycode)))
+    (alexandria:removef *pressed-down* keycode)
+    (format t "~A~%" *pressed-down*)
+    (values)))
+
+(defmethod handle-event ((event-type (eql :keydown)) event)
+  (let* ((keysym (cffi:foreign-slot-pointer
+                  event
+                  '(:struct sdl2:keyboard-event)
+                  'sdl2:keysym))
+         (keycode (cffi:foreign-slot-value
+                   keysym
+                   '(:struct sdl2:keysym)
+                   'sdl2/keyboard::keycode)))
+    (pushnew keycode *pressed-down*)
+    (format t "~A~%" *pressed-down*)
+    (values)))
+
+(defun handle-input ()
+  (let ((event (sdl2:make-event)))
+    (while (plusp (sdl2:poll-event event))
+      (let ((event-type (cffi:mem-ref event 'sdl2:event-type)))
+        (handle-event event-type event)))))
+ 
+
 (defun main ()
   (init)
   (unwind-protect
        (loop
         (restart-case
             (progn
+              (handle-input)
               (render)
               (sleep 1/60))
           (quit ()

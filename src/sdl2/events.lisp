@@ -12,7 +12,8 @@
    #:mouse-button-event
    #:mouse-wheel-event
    #:make-event
-   #:poll-event))
+   #:poll-event
+   #:event-type))
 
 (in-package sdl2/events)
 
