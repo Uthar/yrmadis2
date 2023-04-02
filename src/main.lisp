@@ -161,7 +161,10 @@
               (render)
               (sleep 1/60))
           (quit ()
-            (return))))
+            :report "Quit the main loop"
+            (return))
+          (skip-frame ()
+            :report "Skip this frame")))
     (cleanup)))
      
                   
