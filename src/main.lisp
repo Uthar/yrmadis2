@@ -35,8 +35,8 @@
   (setf *camera* (camera:camera 0 0 3))
   (setf *sphere* (sphere:load-sphere (sphere:make-sphere 5)))
   (setf *shader* (make-instance 'shaders:opengl-shader
-                                :vert "src/glsl/model-view-projection.vert"
-                                :frag "src/glsl/cubemap.frag"))
+                                :vert "src/glsl/planet.vert"
+                                :frag "src/glsl/planet.frag"))
   (setf *cubemap* (make-instance 'cubemap::cubemap
                                  :posx "./textures/earth/posx.png"
                                  :posy "./textures/earth/posy.png"
