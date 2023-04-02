@@ -68,17 +68,17 @@
          (progn
            (gl:bind-vertex-array vao)
            (gl:bind-buffer :array-buffer vbo)
-           (loop for triangle in triangles
-                 with index = -1
-                 do (setf (gl:glaref vertices (incf index)) (vx (first triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vy (first triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vz (first triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vx (second triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vy (second triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vz (second triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vx (third triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vy (third triangle)))
-                 do (setf (gl:glaref vertices (incf index)) (vz (third triangle))))
+           (let ((index -1))
+             (dolist (triangle triangles)
+               (setf (gl:glaref vertices (incf index)) (vx (first triangle))
+                     (gl:glaref vertices (incf index)) (vy (first triangle))
+                     (gl:glaref vertices (incf index)) (vz (first triangle))
+                     (gl:glaref vertices (incf index)) (vx (second triangle))
+                     (gl:glaref vertices (incf index)) (vy (second triangle))
+                     (gl:glaref vertices (incf index)) (vz (second triangle))
+                     (gl:glaref vertices (incf index)) (vx (third triangle))
+                     (gl:glaref vertices (incf index)) (vy (third triangle))
+                     (gl:glaref vertices (incf index)) (vz (third triangle)))))
            (gl:buffer-data :array-buffer :static-draw vertices)
            (gl:vertex-attrib-pointer 0 3 :float nil
                                      (* (sb-alien:alien-size float :bytes) 3)
