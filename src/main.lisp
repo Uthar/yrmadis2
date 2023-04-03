@@ -1,6 +1,7 @@
 (defpackage yrmadis2/main
   (:use :cl :3d-vectors :3d-matrices)
   (:local-nicknames
+   (:a :alexandria)
    (:sphere :yrmadis2/sphere)
    (:camera :yrmadis2/camera)
    (:cubemap :yrmadis2/cubemap)
@@ -18,8 +19,61 @@
 (defvar *gl* nil)
 (defvar *sphere* nil)
 (defvar *camera* nil)
-(defvar *cubemap* nil)
-(defvar *shader* nil)
+
+(defvar *planets* (make-hash-table :test 'equal))
+
+(defclass planet ()
+  (shader
+   cubemap))
+
+(defclass earth (planet) ())
+
+(defmethod initialize-instance ((earth earth) &key)
+  (with-slots (shader cubemap) earth
+    (setf shader
+          (make-instance 'shaders:opengl-shader
+                         :vert "src/glsl/planet.vert"
+                         :frag "src/glsl/planet.frag"))
+    (setf cubemap
+          (make-instance 'cubemap::cubemap
+                         :posx "./textures/earth/posx.png"
+                         :posy "./textures/earth/posy.png"
+                         :posz "./textures/earth/posz.png"
+                         :negx "./textures/earth/negx.png"
+                         :negy "./textures/earth/negy.png"
+                         :negz "./textures/earth/negz.png"))))
+
+(defgeneric render (planet))
+
+(defmethod render ((earth earth))
+  (with-slots (shader cubemap) earth
+    (gl:use-program (slot-value shader 'shaders::program))
+    (gl:bind-texture :texture-cube-map (slot-value cubemap 'cubemap::texture))
+    (gl:uniform-matrix-4fv (gl:get-uniform-location
+                            (slot-value shader 'shaders::program)
+                            "model")
+                           (marr
+                            (m*
+                             (mtranslation (vec3 0.0 0 0))
+                             (mscaling (vec3 0.8 0.8 0.8))
+                             (mrotation +vx+ (camera::rad 30))
+                             (mrotation +vy+ (let ((time (sdl2:get-ticks)))
+                                               (* 0.03 (camera::rad time)))))))
+    (let ((view (camera:view-matrix *camera*))
+          (projection (mperspective (slot-value *camera* 'camera::zoom)
+                                    (/ *width* *height*)
+                                    0.1 100.0)))
+      (gl:uniform-matrix-4fv (gl:get-uniform-location
+                              (slot-value shader 'shaders::program)
+                              "view")
+                             (marr view))
+      (gl:uniform-matrix-4fv (gl:get-uniform-location
+                              (slot-value shader 'shaders::program)
+                              "projection")
+                             (marr projection)))
+    (gl:bind-vertex-array *sphere*)
+    (gl:polygon-mode :front-and-back :fill)
+    (gl:draw-arrays :triangles 0 (* 3 (length (sphere:make-sphere 5))))))
 
 (defun init ()
   (sdl2:init '(:everything))
@@ -34,23 +88,16 @@
   (gl:enable :multisample)
   (setf *camera* (camera:camera 0 0 3))
   (setf *sphere* (sphere:load-sphere (sphere:make-sphere 5)))
-  (setf *shader* (make-instance 'shaders:opengl-shader
-                                :vert "src/glsl/planet.vert"
-                                :frag "src/glsl/planet.frag"))
-  (setf *cubemap* (make-instance 'cubemap::cubemap
-                                 :posx "./textures/earth/posx.png"
-                                 :posy "./textures/earth/posy.png"
-                                 :posz "./textures/earth/posz.png"
-                                 :negx "./textures/earth/negx.png"
-                                 :negy "./textures/earth/negy.png"
-                                 :negz "./textures/earth/negz.png"))
+  (setf (gethash "earth" *planets*) (make-instance 'earth))
   (values))
 
 (defun cleanup ()
   (sdl2:gl-make-current *window* *gl*)
-  (gl:delete-texture (slot-value *cubemap* 'cubemap::texture))
+  (dolist (planet (a:hash-table-values *planets*))
+    (with-slots (shader cubemap) planet
+      (gl:delete-texture (slot-value cubemap 'cubemap::texture))
+      (gl:delete-program (slot-value shader 'shaders::program))))
   (gl:delete-buffers (list *sphere*))
-  (gl:delete-program (slot-value *shader* 'shaders::program))
   (sdl2:gl-delete-context *gl*)
   (sdl2:gl-reset-attributes)
   (sdl2:destroy-window *window*)
@@ -58,7 +105,7 @@
 
 (defparameter *walk-speed* 0.1)
 
-(defun render ()
+(defun update-and-render ()
   (when (find :up *pressed-down*)
     (camera:walk *camera* :z (- *walk-speed*)))
   (when (find :down *pressed-down*)
@@ -70,33 +117,8 @@
   (gl:viewport 0 0 *width* *height*)
   (gl:clear-color 0.1 0.1 0.1 1.0)
   (gl:clear :color-buffer-bit :depth-buffer-bit)
-  (gl:use-program (slot-value *shader* 'shaders::program))
-  (gl:bind-texture :texture-cube-map (slot-value *cubemap* 'cubemap::texture))
-  (gl:uniform-matrix-4fv (gl:get-uniform-location
-                          (slot-value *shader* 'shaders::program)
-                          "model")
-                         (marr
-                          (m*
-                           (mtranslation (vec3 0.0 0 0))
-                           (mscaling (vec3 0.8 0.8 0.8))
-                           (mrotation +vx+ (camera::rad 30))
-                           (mrotation +vy+ (let ((time (sdl2:get-ticks)))
-                                             (* 0.03 (camera::rad time)))))))
-  (let ((view (camera:view-matrix *camera*))
-        (projection (mperspective (slot-value *camera* 'camera::zoom)
-                                  (/ *width* *height*)
-                                  0.1 100.0)))
-    (gl:uniform-matrix-4fv (gl:get-uniform-location
-                            (slot-value *shader* 'shaders::program)
-                            "view")
-                           (marr view))
-    (gl:uniform-matrix-4fv (gl:get-uniform-location
-                            (slot-value *shader* 'shaders::program)
-                            "projection")
-                           (marr projection)))
-  (gl:bind-vertex-array *sphere*)
-  (gl:polygon-mode :front-and-back :fill)
-  (gl:draw-arrays :triangles 0 (* 3 (length (sphere:make-sphere 5))))
+  (dolist (planet (a:hash-table-values *planets*))
+    (render planet))
   (gl:bind-vertex-array 0)
   (gl:bind-texture :texture-cube-map 0)
   (gl:use-program 0)
@@ -146,9 +168,11 @@
 
 (defun handle-input ()
   (let ((event (sdl2:make-event)))
-    (while (plusp (sdl2:poll-event event))
-      (let ((event-type (cffi:mem-ref event 'sdl2:event-type)))
-        (handle-event event-type event)))))
+    (unwind-protect
+         (while (plusp (sdl2:poll-event event))
+           (let ((event-type (cffi:mem-ref event 'sdl2:event-type)))
+             (handle-event event-type event)))
+      (cffi:foreign-free event))))
  
 
 (defun main ()
@@ -158,7 +182,7 @@
         (restart-case
             (progn
               (handle-input)
-              (render)
+              (update-and-render)
               (sleep 1/60))
           (quit ()
             :report "Quit the main loop"
