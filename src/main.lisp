@@ -71,9 +71,9 @@
                               (slot-value shader 'shaders::program)
                               "projection")
                              (marr projection)))
-    (gl:bind-vertex-array *sphere*)
+    (gl:bind-vertex-array (slot-value *sphere* 'sphere::vao))
     (gl:polygon-mode :front-and-back :fill)
-    (gl:draw-arrays :triangles 0 (* 3 (length (sphere:make-sphere 5))))))
+    (gl:draw-arrays :triangles 0 (slot-value *sphere* 'sphere::triangles))))
 
 (defun init ()
   (sdl2:init '(:everything))
@@ -87,7 +87,7 @@
   (gl:enable :depth-test)
   (gl:enable :multisample)
   (setf *camera* (camera:camera 0 0 3))
-  (setf *sphere* (sphere:load-sphere (sphere:make-sphere 5)))
+  (setf *sphere* (make-instance 'sphere::sphere :precision 5))
   (setf (gethash "earth" *planets*) (make-instance 'earth))
   (values))
 
@@ -97,13 +97,16 @@
     (with-slots (shader cubemap) planet
       (gl:delete-texture (slot-value cubemap 'cubemap::texture))
       (gl:delete-program (slot-value shader 'shaders::program))))
-  (gl:delete-buffers (list *sphere*))
+  (gl:delete-buffers (list (slot-value *sphere* 'sphere::vao)))
   (sdl2:gl-delete-context *gl*)
   (sdl2:gl-reset-attributes)
   (sdl2:destroy-window *window*)
   (values))
 
 (defparameter *walk-speed* 0.1)
+
+(defvar *pressed-down* nil
+  "Buttons currently pressed down")
 
 (defun update-and-render ()
   (when (find :up *pressed-down*)
@@ -133,9 +136,6 @@
 (defmethod handle-event ((event-type t) event)
   (format t "Ignoring event of type ~A~%" event-type)
   (values))
-
-(defvar *pressed-down* nil
-  "Buttons currently pressed down")
 
 (defmethod handle-event ((event-type (eql :keyup)) event)
   (let* ((keysym (cffi:foreign-slot-pointer

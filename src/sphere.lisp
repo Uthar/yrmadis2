@@ -31,6 +31,20 @@
           (z (vunit (v- c *center*))))
       (list x y z))))
 
+(defclass sphere ()
+  (precision
+   triangles
+   vao)
+  (:default-initargs
+   :precision 3))
+
+(defmethod initialize-instance :after ((sphere sphere) &key precision)
+  (let* ((triangles (make-sphere precision))
+         (vao (load-sphere triangles)))
+    (setf (slot-value sphere 'vao) vao
+          (slot-value sphere 'triangles) (* (length triangles) 3)
+          (slot-value sphere 'precision) precision)))
+
 (defun make-sphere (precision)
   (loop repeat precision
         for triangles = (list (list (vec3 0 1 0)
